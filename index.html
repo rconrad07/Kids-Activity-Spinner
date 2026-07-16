@@ -1,0 +1,1093 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>I'm Bored! Activity Spinner</title>
+  
+  <!-- Web App Manifest & Mobile Capability Meta Tags -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#FF8E53">
+  
+  <!-- Google Fonts for Playful Typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap" rel="stylesheet">
+  
+  <style>
+    /* Reset and Base Styles */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+    
+    body {
+      font-family: 'Fredoka', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #a1c4fd 100%);
+      background-attachment: fixed;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      color: #333333;
+      padding: 20px 16px;
+      overflow-x: hidden;
+    }
+
+    /* Container holding the app */
+    .app-container {
+      width: 100%;
+      max-width: 480px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      flex-grow: 1;
+      justify-content: space-between;
+    }
+
+    /* Header styling */
+    header {
+      text-align: center;
+      margin-bottom: 10px;
+    }
+
+    h1 {
+      font-size: 2.2rem;
+      font-weight: 700;
+      color: #ffffff;
+      text-shadow: 0 4px 8px rgba(0, 0, 0, 0.15), 0 0 2px rgba(0, 0, 0, 0.2);
+      letter-spacing: 0.5px;
+      display: flex;
+      flex-direction: column;
+      line-height: 1.1;
+    }
+
+    h1 span.subtitle {
+      font-size: 1.1rem;
+      font-weight: 400;
+      opacity: 0.95;
+      margin-top: 4px;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Main Area: Wheel and Pointer */
+    .wheel-outer-wrapper {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 1;
+      max-width: 380px;
+      margin: auto;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* Outer glowing background ring */
+    .wheel-background-glow {
+      position: absolute;
+      width: 98%;
+      height: 98%;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0) 70%);
+      filter: blur(10px);
+      z-index: 1;
+    }
+
+    .wheel-container {
+      position: relative;
+      width: 90%;
+      height: 90%;
+      z-index: 2;
+      border-radius: 50%;
+      box-shadow: 0 12px 28px rgba(0,0,0,0.15), 0 4px 10px rgba(0,0,0,0.1);
+      background-color: #ffffff;
+      padding: 4px;
+    }
+
+    canvas#wheel {
+      width: 100%;
+      height: 100%;
+      display: block;
+      border-radius: 50%;
+    }
+
+    /* The triangular pointer at the top of the wheel */
+    .pointer {
+      position: absolute;
+      top: -5px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 36px;
+      height: 42px;
+      z-index: 10;
+      filter: drop-shadow(0 4px 4px rgba(0, 0, 0, 0.15));
+      transform-origin: top center;
+    }
+
+    .pointer-arrow {
+      width: 0;
+      height: 0;
+      border-left: 18px solid transparent;
+      border-right: 18px solid transparent;
+      border-top: 36px solid #ff4a5a;
+      position: relative;
+    }
+
+    .pointer-dot {
+      width: 14px;
+      height: 14px;
+      background-color: #ffffff;
+      border-radius: 50%;
+      position: absolute;
+      top: -34px;
+      left: -7px;
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.15);
+    }
+
+    /* Pointer rotation animations for tactile bumping */
+    .pointer.bump {
+      animation: pointer-bump-anim 0.15s ease-out;
+    }
+
+    @keyframes pointer-bump-anim {
+      0% { transform: translateX(-50%) rotate(0deg); }
+      30% { transform: translateX(-50%) rotate(-18deg); }
+      70% { transform: translateX(-50%) rotate(5deg); }
+      100% { transform: translateX(-50%) rotate(0deg); }
+    }
+
+    /* UI Actions Block */
+    .controls {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      z-index: 5;
+      margin-top: 15px;
+    }
+
+    /* Spin Button Styling */
+    .btn-spin {
+      font-family: inherit;
+      width: 80%;
+      max-width: 280px;
+      background: linear-gradient(135deg, #ff922b 0%, #f76707 100%);
+      color: white;
+      border: none;
+      border-radius: 50px;
+      padding: 16px 32px;
+      font-size: 1.6rem;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 8px 24px rgba(247, 103, 7, 0.4), inset 0 -4px 0 rgba(0,0,0,0.15), inset 0 4px 0 rgba(255,255,255,0.25);
+      transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      position: relative;
+      overflow: hidden;
+      outline: none;
+    }
+
+    .btn-spin:active {
+      transform: scale(0.95);
+      box-shadow: 0 4px 12px rgba(247, 103, 7, 0.3), inset 0 -2px 0 rgba(0,0,0,0.1);
+    }
+
+    .btn-spin:disabled {
+      background: linear-gradient(135deg, #ced4da 0%, #adb5bd 100%);
+      box-shadow: none;
+      cursor: not-allowed;
+      transform: scale(0.98);
+      opacity: 0.8;
+    }
+
+    /* Edit/Manage activities trigger button */
+    .btn-manage-container {
+      display: flex;
+      justify-content: center;
+      width: 100%;
+    }
+
+    .btn-secondary {
+      font-family: inherit;
+      background-color: rgba(255, 255, 255, 0.3);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 2px solid rgba(255, 255, 255, 0.4);
+      color: #495057;
+      padding: 10px 20px;
+      border-radius: 30px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+      transition: all 0.2s ease;
+    }
+
+    .btn-secondary:active {
+      background-color: rgba(255, 255, 255, 0.5);
+      transform: translateY(1px);
+    }
+
+    /* Modal / Drawer style for editing activities */
+    .editor-drawer {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background-color: #ffffff;
+      border-top-left-radius: 32px;
+      border-top-right-radius: 32px;
+      box-shadow: 0 -10px 40px rgba(0,0,0,0.15);
+      transform: translateY(105%);
+      transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      z-index: 100;
+      max-height: 85vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .editor-drawer.open {
+      transform: translateY(0);
+    }
+
+    .drawer-header {
+      padding: 20px 24px 12px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #f1f3f5;
+    }
+
+    .drawer-title {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: #343a40;
+    }
+
+    .btn-close {
+      background: none;
+      border: none;
+      font-size: 2rem;
+      color: #868e96;
+      cursor: pointer;
+      padding: 4px;
+      line-height: 1;
+    }
+
+    /* Activity Input and Form */
+    .editor-form {
+      padding: 16px 24px;
+      display: flex;
+      gap: 10px;
+      border-bottom: 1px solid #f1f3f5;
+    }
+
+    .input-activity {
+      flex-grow: 1;
+      font-family: inherit;
+      font-size: 1rem;
+      padding: 12px 18px;
+      border: 2px solid #e9ecef;
+      border-radius: 16px;
+      outline: none;
+      transition: border-color 0.2s ease;
+      color: #495057;
+    }
+
+    .input-activity:focus {
+      border-color: #ff922b;
+    }
+
+    .btn-add {
+      font-family: inherit;
+      background: linear-gradient(135deg, #51cf66 0%, #37b24d 100%);
+      color: white;
+      border: none;
+      border-radius: 16px;
+      padding: 0 20px;
+      font-weight: 700;
+      font-size: 1rem;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(55, 178, 77, 0.25);
+    }
+
+    .btn-add:active {
+      transform: scale(0.97);
+    }
+
+    /* Scrollable Activity List */
+    .activity-list-container {
+      flex-grow: 1;
+      overflow-y: auto;
+      padding: 16px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .activity-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: #f8f9fa;
+      border-radius: 16px;
+      padding: 12px 16px;
+      border: 1px solid #e9ecef;
+      animation: slide-in-item 0.25s ease-out;
+    }
+
+    @keyframes slide-in-item {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .activity-text {
+      font-size: 1rem;
+      color: #495057;
+      font-weight: 600;
+      word-break: break-word;
+      padding-right: 12px;
+    }
+
+    .btn-delete {
+      background: none;
+      border: none;
+      color: #fa5252;
+      cursor: pointer;
+      padding: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      transition: background-color 0.2s ease;
+    }
+
+    .btn-delete:active {
+      background-color: #ffe3e3;
+    }
+
+    .drawer-footer {
+      padding: 16px 24px 24px 24px;
+      display: flex;
+      gap: 12px;
+      border-top: 1px solid #f1f3f5;
+    }
+
+    .btn-reset {
+      font-family: inherit;
+      flex: 1;
+      background-color: #f1f3f5;
+      color: #495057;
+      border: none;
+      border-radius: 16px;
+      padding: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: center;
+    }
+
+    .btn-reset:active {
+      background-color: #e9ecef;
+    }
+
+    .btn-done {
+      font-family: inherit;
+      flex: 1.2;
+      background: linear-gradient(135deg, #ff922b 0%, #f76707 100%);
+      color: white;
+      border: none;
+      border-radius: 16px;
+      padding: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      text-align: center;
+      box-shadow: 0 4px 12px rgba(247, 103, 7, 0.2);
+    }
+
+    .btn-done:active {
+      transform: scale(0.98);
+    }
+
+    /* Modal overlay background */
+    .drawer-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      z-index: 99;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+    }
+
+    .drawer-overlay.visible {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    /* Winning Result Dialog Overlay */
+    .result-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 200;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 24px;
+      background-color: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .result-overlay.open {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .result-card {
+      background-color: #ffffff;
+      border-radius: 32px;
+      width: 100%;
+      max-width: 380px;
+      padding: 32px 24px;
+      text-align: center;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+      transform: scale(0.7) translateY(50px);
+      transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .result-overlay.open .result-card {
+      transform: scale(1) translateY(0);
+    }
+
+    .result-subtitle {
+      font-size: 1.1rem;
+      color: #ff922b;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      margin-bottom: 8px;
+    }
+
+    .result-title {
+      font-size: 2.2rem;
+      line-height: 1.25;
+      color: #2b2b2b;
+      font-weight: 700;
+      margin-bottom: 24px;
+      word-break: break-word;
+    }
+
+    .btn-result-close {
+      font-family: inherit;
+      background: linear-gradient(135deg, #ff922b 0%, #f76707 100%);
+      color: white;
+      border: none;
+      border-radius: 50px;
+      padding: 14px 28px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      cursor: pointer;
+      width: 100%;
+      box-shadow: 0 6px 16px rgba(247, 103, 7, 0.3);
+    }
+
+    .btn-result-close:active {
+      transform: scale(0.97);
+    }
+
+    /* Confetti Canvas Overlay */
+    canvas#confetti-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 205;
+      pointer-events: none;
+      display: none;
+    }
+
+    /* Responsive adjustments */
+    @media (max-height: 660px) {
+      h1 { font-size: 1.8rem; }
+      h1 span.subtitle { font-size: 0.95rem; }
+      .wheel-outer-wrapper { max-width: 320px; }
+      .btn-spin { padding: 12px 24px; font-size: 1.3rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-container">
+    
+    <header>
+      <h1>
+        I'M BORED!
+        <span class="subtitle">Spin the wheel for a fun activity!</span>
+      </h1>
+    </header>
+
+    <!-- Wheel and Pointer Wrapper -->
+    <div class="wheel-outer-wrapper">
+      <div class="wheel-background-glow"></div>
+      
+      <!-- Arrow Pointer -->
+      <div class="pointer" id="wheel-pointer">
+        <div class="pointer-arrow"></div>
+        <div class="pointer-dot"></div>
+      </div>
+      
+      <!-- Spinning Wheel Container -->
+      <div class="wheel-container">
+        <canvas id="wheel"></canvas>
+      </div>
+    </div>
+
+    <!-- UI Controls Section -->
+    <div class="controls">
+      <button class="btn-spin" id="btn-spin">SPIN THE WHEEL!</button>
+      
+      <div class="btn-manage-container">
+        <button class="btn-secondary" id="btn-open-editor">
+          <!-- Inline Gear Icon SVG -->
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
+          Change Choices
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Editor Drawer Overlay -->
+  <div class="drawer-overlay" id="editor-overlay"></div>
+
+  <!-- Editor Drawer (Slide Up Panel) -->
+  <div class="editor-drawer" id="editor-drawer">
+    <div class="drawer-header">
+      <h2 class="drawer-title">Custom Activities</h2>
+      <button class="btn-close" id="btn-close-editor">&times;</button>
+    </div>
+    
+    <form class="editor-form" id="editor-form" onsubmit="event.preventDefault();">
+      <input type="text" class="input-activity" id="input-activity" placeholder="Add custom activity..." maxlength="40">
+      <button type="submit" class="btn-add" id="btn-add-activity">Add</button>
+    </form>
+    
+    <div class="activity-list-container" id="activity-list-container">
+      <!-- Activity items will be populated by JavaScript -->
+    </div>
+    
+    <div class="drawer-footer">
+      <button class="btn-reset" id="btn-reset-activities">Reset Defaults</button>
+      <button class="btn-done" id="btn-close-editor-done">Done</button>
+    </div>
+  </div>
+
+  <!-- Winning Result Dialog Overlay -->
+  <div class="result-overlay" id="result-overlay">
+    <div class="result-card">
+      <div class="result-subtitle">Today's Activity is...</div>
+      <div class="result-title" id="winning-activity-text">Build a LEGO fortress!</div>
+      <button class="btn-result-close" id="btn-result-close">LETS DO IT!</button>
+    </div>
+  </div>
+
+  <!-- Confetti Canvas -->
+  <canvas id="confetti-canvas"></canvas>
+
+  <script>
+    // --- 1. DEFAULT DATA SEEDING (Targeted at 8-year-old boys) ---
+    const DEFAULT_ACTIVITIES = [
+      "Build a LEGO fortress",
+      "Draw a comic book page",
+      "Design a new superhero",
+      "Build a blanket fort",
+      "Set up an indoor obstacle course",
+      "Make paper airplanes & fly them",
+      "Have a 1-minute dance party",
+      "Do a scavenger hunt",
+      "Play a card or board game",
+      "Read a chapter of a book",
+      "Do a science experiment",
+      "Do 20 jumping jacks",
+      "Draw with sidewalk chalk",
+      "Make a cardboard box creation",
+      "Solve a puzzle",
+      "Learn a magic trick",
+      "Play catch or bounce a ball",
+      "Write a short funny story",
+      "Do some origami folding",
+      "Go on a nature walk outside"
+    ];
+
+    let activities = [];
+
+    // Local Storage keys
+    const LOCAL_STORAGE_KEY = "kidSpinnerActivities";
+
+    function loadActivities() {
+      const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
+      if (stored) {
+        try {
+          activities = JSON.parse(stored);
+          if (!Array.isArray(activities) || activities.length === 0) {
+            resetToDefaults();
+          }
+        } catch (e) {
+          resetToDefaults();
+        }
+      } else {
+        resetToDefaults();
+      }
+    }
+
+    function saveActivities() {
+      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(activities));
+      drawWheel();
+      renderActivityList();
+    }
+
+    function resetToDefaults() {
+      activities = [...DEFAULT_ACTIVITIES];
+      saveActivities();
+    }
+
+    // --- 2. THE WHEEL CANVAS DRAWING ---
+    const canvas = document.getElementById("wheel");
+    const ctx = canvas.getContext("2d");
+    
+    // Harmonious playful color palette (up to 12 colors, we cycle if there are more)
+    const PALETTE = [
+      "#FF6B6B", // Coral
+      "#FF922B", // Orange
+      "#FCC419", // Yellow
+      "#51CF66", // Green
+      "#20C997", // Teal
+      "#339AF0", // Blue
+      "#748FFC", // Indigo
+      "#845EF7", // Violet
+      "#BE4BDB", // Purple
+      "#F06595", // Pink
+      "#E8590C", // Rust orange
+      "#0CA678"  // Emerald green
+    ];
+
+    let currentAngle = 0; // The current absolute rotation angle in radians
+
+    // Resizing the canvas dynamically for crisp retina screens
+    function resizeCanvas() {
+      const rect = canvas.parentElement.getBoundingClientRect();
+      const size = Math.min(rect.width, rect.height) * window.devicePixelRatio;
+      canvas.width = size;
+      canvas.height = size;
+      drawWheel();
+    }
+
+    // Wrap canvas drawing inside function
+    function drawWheel() {
+      if (canvas.width === 0 || canvas.height === 0) return;
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      const numSegments = activities.length;
+      if (numSegments === 0) return;
+
+      const centerX = canvas.width / 2;
+      const centerY = canvas.height / 2;
+      const radius = (canvas.width / 2) - 10; // offset a bit to prevent clipping
+      const arcSize = (Math.PI * 2) / numSegments;
+
+      // Enable font scale factor based on width
+      const fontSize = Math.max(12, Math.floor(canvas.width / 32));
+      ctx.font = `700 ${fontSize}px 'Fredoka', sans-serif`;
+      ctx.textAlign = "right";
+      ctx.textBaseline = "middle";
+
+      for (let i = 0; i < numSegments; i++) {
+        const startAng = currentAngle + (i * arcSize);
+        const endAng = startAng + arcSize;
+
+        // Draw segment wedge
+        ctx.beginPath();
+        ctx.moveTo(centerX, centerY);
+        ctx.arc(centerX, centerY, radius, startAng, endAng);
+        ctx.closePath();
+        
+        ctx.fillStyle = PALETTE[i % PALETTE.length];
+        ctx.fill();
+
+        // Draw border line
+        ctx.lineWidth = Math.max(1.5, canvas.width / 200);
+        ctx.strokeStyle = "#ffffff";
+        ctx.stroke();
+
+        // Draw text
+        ctx.save();
+        ctx.translate(centerX, centerY);
+        // Rotate text path to center of segment arc
+        ctx.rotate(startAng + (arcSize / 2));
+        
+        ctx.fillStyle = "#ffffff";
+        
+        // Truncate text if it's too long
+        let text = activities[i];
+        const maxTextWidth = radius * 0.70;
+        
+        // Simple ellipsis helper
+        if (ctx.measureText(text).width > maxTextWidth) {
+          while (text.length > 0 && ctx.measureText(text + "...").width > maxTextWidth) {
+            text = text.substring(0, text.length - 1);
+          }
+          text += "...";
+        }
+
+        // Draw text near the outer edge (shifted leftwards because layout is textAlign='right')
+        ctx.fillText(text, radius - 20, 0);
+        ctx.restore();
+      }
+
+      // Draw Center Hub Pin
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, radius * 0.12, 0, Math.PI * 2);
+      ctx.fillStyle = "#ffffff";
+      ctx.shadowBlur = 8;
+      ctx.shadowColor = "rgba(0, 0, 0, 0.15)";
+      ctx.fill();
+      ctx.shadowBlur = 0; // reset shadow
+      ctx.lineWidth = Math.max(2, canvas.width / 150);
+      ctx.strokeStyle = "#ff922b";
+      ctx.stroke();
+
+      // Inner center dot
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, radius * 0.05, 0, Math.PI * 2);
+      ctx.fillStyle = "#ff922b";
+      ctx.fill();
+    }
+
+    // --- 3. SPIN PHYSICS & ANIMATION ---
+    let isSpinning = false;
+    let spinVelocity = 0;
+    const friction = 0.982; // Easing friction (0.98 - 0.99 is good)
+    const minSpeed = 0.001; // Minimum speed threshold before stopping
+    let lastSegmentIndex = -1; // To track segments tick events
+
+    const btnSpin = document.getElementById("btn-spin");
+    const pointerElement = document.getElementById("wheel-pointer");
+
+    function triggerSpin() {
+      if (isSpinning || activities.length === 0) return;
+      
+      isSpinning = true;
+      btnSpin.disabled = true;
+      
+      // Calculate random initial velocity (high speed rotation)
+      // Math.random() * 0.3 + 0.35 gives values around 0.35 to 0.65 rads/frame
+      spinVelocity = 0.35 + Math.random() * 0.3;
+      
+      lastSegmentIndex = getCurrentWinningIndex();
+      
+      requestAnimationFrame(animateSpin);
+    }
+
+    function animateSpin() {
+      if (!isSpinning) return;
+
+      currentAngle += spinVelocity;
+      spinVelocity *= friction;
+
+      // Handle simple tactile click bump on pointer when passing a segment border
+      const currentWinner = getCurrentWinningIndex();
+      if (currentWinner !== lastSegmentIndex) {
+        lastSegmentIndex = currentWinner;
+        // Bump pointer
+        pointerElement.classList.remove("bump");
+        // Force reflow
+        void pointerElement.offsetWidth;
+        pointerElement.classList.add("bump");
+      }
+
+      drawWheel();
+
+      if (spinVelocity > minSpeed) {
+        requestAnimationFrame(animateSpin);
+      } else {
+        finishSpin();
+      }
+    }
+
+    // Calculate current winning index under the pointer (at 12 o'clock, which corresponds to -Math.PI / 2 angle)
+    function getCurrentWinningIndex() {
+      const numSegments = activities.length;
+      if (numSegments === 0) return 0;
+      
+      const arcSize = (Math.PI * 2) / numSegments;
+      
+      // The pointer is positioned at the top of the screen (12 o'clock, index aligned with -Math.PI / 2)
+      // Standard angle increases clockwise. Center of arc segment index i is: currentAngle + i * arcSize + arcSize / 2
+      // We want to find i such that: currentAngle + i * arcSize <= 3 * Math.PI / 2 <= currentAngle + (i+1) * arcSize (modulo 2PI)
+      
+      // Normalize angle to range [0, 2*Math.PI]
+      const normalizedAngle = (currentAngle % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2);
+      
+      // Offset represents the angle from 12 o'clock (-Math.PI/2) clockwise
+      // Since pointer is at -90 degrees (-Math.PI/2 or 3*Math.PI/2)
+      const pointerTargetAngle = 3 * Math.PI / 2;
+      
+      let relativeAngle = pointerTargetAngle - normalizedAngle;
+      if (relativeAngle < 0) relativeAngle += Math.PI * 2;
+      
+      const winnerIndex = Math.floor(relativeAngle / arcSize) % numSegments;
+      return winnerIndex;
+    }
+
+    function finishSpin() {
+      isSpinning = false;
+      btnSpin.disabled = false;
+      
+      const winningIndex = getCurrentWinningIndex();
+      const winningActivity = activities[winningIndex];
+
+      showResult(winningActivity);
+    }
+
+    // --- 4. RESULT SHOWCASE & CONFETTI ---
+    const resultOverlay = document.getElementById("result-overlay");
+    const resultText = document.getElementById("winning-activity-text");
+    const btnResultClose = document.getElementById("btn-result-close");
+    const confettiCanvas = document.getElementById("confetti-canvas");
+    const confettiCtx = confettiCanvas.getContext("2d");
+
+    let confettiParticles = [];
+    let confettiAnimationId = null;
+
+    function showResult(text) {
+      resultText.innerText = text;
+      resultOverlay.classList.add("open");
+      
+      // Trigger confetti
+      startConfetti();
+    }
+
+    btnResultClose.addEventListener("click", () => {
+      resultOverlay.classList.remove("open");
+      stopConfetti();
+    });
+
+    // Custom confetti particle implementation
+    function startConfetti() {
+      confettiCanvas.style.display = "block";
+      resizeConfettiCanvas();
+      
+      confettiParticles = [];
+      const colors = ["#ff6b6b", "#ffd000", "#51cf66", "#339af0", "#e64980", "#be4bdb", "#ff922b"];
+      
+      // Populate particles
+      const particleCount = 120;
+      for (let i = 0; i < particleCount; i++) {
+        confettiParticles.push({
+          x: Math.random() * confettiCanvas.width,
+          y: Math.random() * confettiCanvas.height - confettiCanvas.height, // start off-screen
+          r: Math.random() * 6 + 4,
+          d: Math.random() * confettiCanvas.height,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          tilt: Math.random() * 10 - 5,
+          tiltAngleIncremental: Math.random() * 0.07 + 0.02,
+          tiltAngle: 0,
+          w: Math.random() * 10 + 5,
+          h: Math.random() * 12 + 6,
+          speedY: Math.random() * 3 + 2,
+          speedX: Math.random() * 2 - 1
+        });
+      }
+      
+      if (confettiAnimationId) cancelAnimationFrame(confettiAnimationId);
+      animateConfetti();
+    }
+
+    function resizeConfettiCanvas() {
+      confettiCanvas.width = window.innerWidth;
+      confettiCanvas.height = window.innerHeight;
+    }
+
+    function animateConfetti() {
+      confettiCtx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+      let remaining = false;
+
+      for (let i = 0; i < confettiParticles.length; i++) {
+        const p = confettiParticles[i];
+        p.tiltAngle += p.tiltAngleIncremental;
+        p.y += p.speedY;
+        p.x += p.speedX;
+        p.tilt = Math.sin(p.tiltAngle) * 12;
+
+        if (p.y <= confettiCanvas.height) {
+          remaining = true;
+        }
+
+        // Draw single piece of confetti
+        confettiCtx.beginPath();
+        confettiCtx.lineWidth = p.r / 2;
+        confettiCtx.strokeStyle = p.color;
+        confettiCtx.moveTo(p.x + p.tilt + p.w / 2, p.y);
+        confettiCtx.lineTo(p.x + p.tilt, p.y + p.tilt + p.h / 2);
+        confettiCtx.stroke();
+      }
+
+      if (remaining) {
+        confettiAnimationId = requestAnimationFrame(animateConfetti);
+      } else {
+        stopConfetti();
+      }
+    }
+
+    function stopConfetti() {
+      if (confettiAnimationId) {
+        cancelAnimationFrame(confettiAnimationId);
+        confettiAnimationId = null;
+      }
+      confettiCtx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+      confettiCanvas.style.display = "none";
+    }
+
+    window.addEventListener("resize", () => {
+      resizeConfettiCanvas();
+    });
+
+    // --- 5. ACTIVITY LIST EDITING AND CRUD SYSTEM ---
+    const btnOpenEditor = document.getElementById("btn-open-editor");
+    const btnCloseEditor = document.getElementById("btn-close-editor");
+    const btnCloseEditorDone = document.getElementById("btn-close-editor-done");
+    const editorDrawer = document.getElementById("editor-drawer");
+    const editorOverlay = document.getElementById("editor-overlay");
+    
+    const editorForm = document.getElementById("editor-form");
+    const inputActivity = document.getElementById("input-activity");
+    const activityListContainer = document.getElementById("activity-list-container");
+    const btnResetActivities = document.getElementById("btn-reset-activities");
+
+    function openEditor() {
+      if (isSpinning) return;
+      editorDrawer.classList.add("open");
+      editorOverlay.classList.add("visible");
+      renderActivityList();
+    }
+
+    function closeEditor() {
+      editorDrawer.classList.remove("open");
+      editorOverlay.classList.remove("visible");
+    }
+
+    function renderActivityList() {
+      activityListContainer.innerHTML = "";
+      
+      activities.forEach((activity, index) => {
+        const item = document.createElement("div");
+        item.className = "activity-item";
+        
+        const textSpan = document.createElement("span");
+        textSpan.className = "activity-text";
+        textSpan.innerText = activity;
+        
+        const deleteBtn = document.createElement("button");
+        deleteBtn.className = "btn-delete";
+        deleteBtn.innerHTML = `
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="3 6 5 6 21 6"></polyline>
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            <line x1="10" y1="11" x2="10" y2="17"></line>
+            <line x1="14" y1="11" x2="14" y2="17"></line>
+          </svg>
+        `;
+        deleteBtn.addEventListener("click", () => {
+          deleteActivity(index);
+        });
+
+        item.appendChild(textSpan);
+        item.appendChild(deleteBtn);
+        activityListContainer.appendChild(item);
+      });
+    }
+
+    function addActivity(e) {
+      if (e) e.preventDefault();
+      
+      const newText = inputActivity.value.trim();
+      if (!newText) return;
+      
+      // Limit list to keep wheel readable (e.g. max 30 segments)
+      if (activities.length >= 32) {
+        alert("The wheel is full! Delete some activities to add new ones.");
+        return;
+      }
+
+      activities.push(newText);
+      inputActivity.value = "";
+      saveActivities();
+      
+      // Scroll to bottom of list to show new item
+      setTimeout(() => {
+        activityListContainer.scrollTop = activityListContainer.scrollHeight;
+      }, 50);
+    }
+
+    function deleteActivity(index) {
+      if (activities.length <= 3) {
+        alert("You need at least 3 activities to spin the wheel!");
+        return;
+      }
+      activities.splice(index, 1);
+      saveActivities();
+    }
+
+    // Event Listeners
+    btnOpenEditor.addEventListener("click", openEditor);
+    btnCloseEditor.addEventListener("click", closeEditor);
+    btnCloseEditorDone.addEventListener("click", closeEditor);
+    editorOverlay.addEventListener("click", closeEditor);
+    
+    editorForm.addEventListener("submit", addActivity);
+    btnResetActivities.addEventListener("click", () => {
+      if (confirm("Reset the list back to default choices?")) {
+        resetToDefaults();
+      }
+    });
+
+    btnSpin.addEventListener("click", triggerSpin);
+
+    // --- 6. INITIALIZATION & SCALE SUPPORT ---
+    window.addEventListener("load", () => {
+      loadActivities();
+      resizeCanvas();
+      
+      // Add orientation and resize handling
+      window.addEventListener("resize", resizeCanvas);
+      window.addEventListener("orientationchange", () => {
+        setTimeout(resizeCanvas, 200);
+      });
+    });
+
+  </script>
+</body>
+</html>
